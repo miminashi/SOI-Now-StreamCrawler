@@ -1,0 +1,7 @@
+ID = 'twitterid'
+PASSWD = 'password'
+MONGO_SERVER = 'localhost'
+MONGO_DATABASE = 'streamcrawler'
+HASHTAGS = ''
+STREAMING_URL = 'http://stream.twitter.com/1/statuses/filter.json'
+

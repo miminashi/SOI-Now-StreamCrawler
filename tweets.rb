@@ -1,0 +1,3 @@
+require 'mongo_mapper'
+
+
