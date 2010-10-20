@@ -1,10 +1,19 @@
 <h1>Activities</h1>
 <hr>
-<% @activities.each do |a| %>
-  <div>
-    <a href="/activities/<%= a.id.to_s %>">#<%= a.hashtag %></a>
-  </div>
-<% end %>
+<table>
+  <tr>
+    <th>Hashtag</th>
+    <th>Title</th>
+    <th>Description</th>
+  </tr>
+  <% @activities.each do |a| %>
+    <tr>
+      <td><a href="/activities/<%= a.id.to_s %>">#<%= a.hashtag %></a></td>
+      <td><%= a.title %></td>
+      <td><%= a.description %></td>
+    </tr>
+  <% end %>
+</table>
 <hr>
 <a href="/activities/new">New</a>
 

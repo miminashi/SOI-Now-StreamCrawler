@@ -5,3 +5,6 @@ MONGO_DATABASE = 'streamcrawler'
 HASHTAGS = ''
 STREAMING_URL = 'http://stream.twitter.com/1/statuses/filter.json'
 
+ADMIN_USER = 'admin'
+ADMIN_PASS = 'admin'
+

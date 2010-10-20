@@ -10,27 +10,14 @@ require 'mongo_mapper'
 #require 'tweet.rb'
 require 'settings.rb'
 
-#MongoMapper.connection = Mongo::Connection.new('localhost')
-#MongoMapper.database = 'streamcrawler'
 MongoMapper.connection = Mongo::Connection.new(MONGO_SERVER)
 MongoMapper.database = MONGO_DATABASE
 
-=begin
-class Tweet
-  include MongoMapper::Document
-  key :id,   Integer
-  key :text, String
-  key :created_at, Data
-  key :user_screen_name, String
-  key :user_name, String
-  timestamps!
-end
-=end
-
 class User
   include MongoMapper::EmbeddedDocument
-  key :screen_name, String
-  key :name,        String
+  key :screen_name,       String
+  key :name,              String
+  key :profile_image_url, String
 end
 
 class Hashtag
@@ -61,6 +48,21 @@ class Activity
   key :description, String
 end
 
+helpers do
+  def protected!
+    unless authorized?
+      response['WWW-Authenticate'] = %(Basic realm="authenticate required")
+      throw(:halt, [401, "Not authorized\n"])
+    end
+  end
+
+  def authorized?
+    @auth ||=  Rack::Auth::Basic::Request.new(request.env)
+    @auth.provided? && @auth.basic? && @auth.credentials && @auth.credentials == [ADMIN_USER, ADMIN_PASS]
+  end
+end
+
+
 get '/' do
   redirect '/activities'
 end
@@ -71,56 +73,41 @@ get '/activities' do
 end
 
 get '/activities/new' do
+  protected!
   erb :activities_new
 end
 
 post '/activities/create' do
+  protected!
   redirect '/activities/new' if (params[:title] =~ /^$/ or params[:hashtag] =~ /^$|\s+|\#|\-/)
   Activity.create({:title => params[:title], :hashtag => params[:hashtag], :description => params[:description]})
+  $http.close_connection
+  crawler
   redirect '/'
 end
 
 get '/activities/:id' do
-  #pp Hashtag.methods
-  #pp BSON::ObjectId.new(params[:id])
   @a = Activity.find(params[:id])
   if @a == nil
     erb :activities_not_found
   else
     p @a.hashtag
-    #@c = Tweet.count(:contidions => {'hashtags.hashtag' => @a.hashtag})
     @c = Tweet.count('hashtags.hashtag' => @a.hashtag)
-    #@t = Tweet.all(:conditions => {'hashtags.hashtag' => @a.hashtag})
-    @t = Tweet.all('hashtags.hashtag' => @a.hashtag)
-    pp @c
-    pp @t
+    #@tweets = Tweet.all('hashtags.hashtag' => @a.hashtag, :limit => 10, :sort => ['t_id', 'desc'])
+    @tweets = Tweet.all('hashtags.hashtag' => @a.hashtag, :limit => 10, :order => 't_id desc')
     erb :activities_show
   end
 end
 
 get '/tweets' do
-  #content_type 'text/html', :charset => 'utf-8'
-  #TWEETS.map {|tweet| "<p><b>#{tweet['user']['screen_name']}</b>: #{tweet['text']}</p>" }.join
   erb :tweets
 end
 
-=begin
-class RingBuffer < Array
-  def initialize(size)
-    @max = size
-    super(0)
-  end
-
-  def push(object)
-    shift if size == @max
-    super
-  end
+get '/emtest' do
+  #p Activity.all.map {|a| '#' + a.hashtag }.join(',')
+  #$http.close_connection
+  #crawler
 end
-=end
-
-#TWEETS = RingBuffer.new(10)
-#STREAMING_URL = 'http://stream.twitter.com/1/statuses/filter.json'
-#STREAMING_URL = 'http://stream.twitter.com/1/statuses/sample.json'
 
 def handle_tweet(t)
   return unless t['text']
@@ -131,7 +118,8 @@ def handle_tweet(t)
   })
   tweet.users << User.new({
     :screen_name => t['user']['screen_name'],
-    :name => t['user']['name']
+    :name => t['user']['name'],
+    :profile_image_url => t['user']['profile_image_url']
   })
   t['entities']['hashtags'].each do |h|
     tweet.hashtags << Hashtag.new({
@@ -141,16 +129,14 @@ def handle_tweet(t)
   tweet.save
 end
 
-
-EM.schedule do
-  http = EM::HttpRequest.new(STREAMING_URL).post(:head => {'Authorization' => [ID, PASSWD]}, :timeout => 0, :query => {'track' => HASHTAGS})
-  #http = EM::HttpRequest.new(STREAMING_URL).get(:head => {'Authorization' => ['botmmns01', 'botmmns']})
+def crawler
+  hashtags = Activity.all.map {|a| '#' + a.hashtag }.join(',')
+  $http = EM::HttpRequest.new(STREAMING_URL).post(:head => {'Authorization' => [ID, PASSWD]}, :timeout => 0, :query => {'track' => hashtags})
+  puts "connected"
   buffer = ""
-  http.stream do |chunk|
+  $http.stream do |chunk|
     buffer += chunk
-    #p buffer
     while line = buffer.slice!(/.+\r?\n/)
-      #pp line
       begin
         handle_tweet(JSON.parse(line))
       rescue => e
@@ -158,5 +144,21 @@ EM.schedule do
       end
     end
   end
+end
+
+EM.schedule do
+  crawler
+  #$http = EM::HttpRequest.new(STREAMING_URL).post(:head => {'Authorization' => [ID, PASSWD]}, :timeout => 0, :query => {'track' => HASHTAGS})
+  #buffer = ""
+  #$http.stream do |chunk|
+  #  buffer += chunk
+  #  while line = buffer.slice!(/.+\r?\n/)
+  #    begin
+  #      handle_tweet(JSON.parse(line))
+  #    rescue => e
+  #      p e
+  #    end
+  #  end
+  #end
 end
 

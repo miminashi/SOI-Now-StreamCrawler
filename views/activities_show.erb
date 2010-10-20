@@ -1,4 +1,16 @@
-<h1><%= @a.title %></h1>
+<h1>#<%= @a.hashtag %></h1>
+<h3><%= @a.title %></h3>
 <p><%= @c %> tweets exist</p>
+<hr>
+<table>
+<% @tweets.each do |t| %>
+  <tr>
+    <td><img src="<%= t.users[0].profile_image_url %>" alt="<%= t.users[0].screen_name %>"/></td>
+    <td><%= t.users[0].screen_name %></td>
+    <td><%= t.text %></td>
+  </tr>
+<% end %>
+</table>
+<hr>
 <a href="/">top</a>
 
