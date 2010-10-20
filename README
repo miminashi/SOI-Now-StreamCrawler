@@ -1,7 +1,11 @@
 ゴミみたいなものうｐしてすみません。
 
 == 下準備
-$ sudo gem install sinatra erb em-http json mongo_mapper'
+1) 必要そうなライブラリをgemで入れます
+$ sudo gem install sinatra erb em-http json mongo_mapper
+2) settings.rb.skeltonをsetting.rbにリネームして適当に編集してください
+$ mv settings.rb.skelton settings.rb
+$ vim settings.rb
 
 == 起動方法
 1) mongodを起動してください
