@@ -1,0 +1,16 @@
+ゴミみたいなものうｐしてすみません。
+
+== 下準備
+$ sudo gem install sinatra erb em-http json mongo_mapper'
+
+== 起動方法
+1) mongodを起動してください
+$ sudo mongod
+2) クローラを起動してください
+$ ruby screamcrawler.rb
+
+== 使う
+ブラウザから、
+http://localhost:4567/
+にアクセスしてみてください。
+
