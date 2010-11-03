@@ -10,6 +10,20 @@ require 'mongo_mapper'
 #require 'tweet.rb'
 require 'settings.rb'
 
+# Time zone converter
+# from http://d.hatena.ne.jp/tonkoh/20080901/1220287952
+#
+class Time
+  def convert_zone(to_zone)
+    original_zone = ENV['TZ']
+    utc_time = dup.gmtime
+    ENV['TZ'] = to_zone
+    to_zone_time = utc_time.localtime
+    ENV['TZ'] = original_zone
+    return to_zone_time
+  end
+end
+
 MongoMapper.connection = Mongo::Connection.new(MONGO_SERVER)
 MongoMapper.database = MONGO_DATABASE
 
@@ -101,6 +115,13 @@ end
 
 get '/tweets' do
   erb :tweets
+end
+
+get '/reboot_crawler' do
+  protected!
+  $http.close_connection
+  crawler
+  redirect '/'
 end
 
 get '/emtest' do
