@@ -156,6 +156,7 @@ def crawler
   puts "connected"
   buffer = ""
   $http.stream do |chunk|
+    p chunk
     buffer += chunk
     while line = buffer.slice!(/.+\r?\n/)
       begin
@@ -165,6 +166,14 @@ def crawler
       end
     end
   end
+  $http.callback do
+    puts 'callback'
+    $http.close_connection
+    crawler
+  end
+  #$http.errback do
+  #  puts 'errback'
+  #end
 end
 
 EM.schedule do
