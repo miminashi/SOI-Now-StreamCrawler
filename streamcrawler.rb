@@ -105,10 +105,13 @@ get '/activities/:id' do
   if @a == nil
     erb :activities_not_found
   else
-    p @a.hashtag
+    #p @a.hashtag
     @c = Tweet.count('hashtags.hashtag' => @a.hashtag)
     #@tweets = Tweet.all('hashtags.hashtag' => @a.hashtag, :limit => 10, :sort => ['t_id', 'desc'])
-    @tweets = Tweet.all('hashtags.hashtag' => @a.hashtag, :limit => 10, :order => 't_id desc')
+    #@tweets = Tweet.all('hashtags.hashtag' => @a.hashtag, :limit => 10, :order => 't_id desc')
+    t = Time.now
+    @tweets = Tweet.limit(10).sort(:t_id.desc).where('hashtags.hashtag' => @a.hashtag)
+    @search_time = Time.now - t
     erb :activities_show
   end
 end
@@ -131,6 +134,7 @@ get '/emtest' do
 end
 
 def handle_tweet(t)
+  #pp t
   return unless t['text']
   tweet = Tweet.create({
     :t_id => t['id'],
